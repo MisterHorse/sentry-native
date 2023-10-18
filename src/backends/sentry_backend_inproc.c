@@ -87,17 +87,28 @@ startup_inproc_backend(
     }
 
     // install our own signal handler
-    g_signal_stack.ss_sp = sentry_malloc(SIGNAL_STACK_SIZE);
-    if (!g_signal_stack.ss_sp) {
-        return 1;
-    }
-    g_signal_stack.ss_size = SIGNAL_STACK_SIZE;
-    g_signal_stack.ss_flags = 0;
-    sigaltstack(&g_signal_stack, 0);
+
+    // Mister Horse mod 
+    // we dont want to change signal stack to avoid confusing host app
+    // it also somehow causes stacktrace being empty
+
+    // g_signal_stack.ss_sp = sentry_malloc(SIGNAL_STACK_SIZE);
+    // if (!g_signal_stack.ss_sp) {
+    //     return 1;
+    // }
+    // g_signal_stack.ss_size = SIGNAL_STACK_SIZE;
+    // g_signal_stack.ss_flags = 0;
+    // sigaltstack(&g_signal_stack, 0);
 
     sigemptyset(&g_sigaction.sa_mask);
     g_sigaction.sa_sigaction = handle_signal;
-    g_sigaction.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    
+    // Mister Horse mod 
+    // we dont want to change signal stack to avoid confusing host app
+    // it also somehow causes stacktrace being empty
+    
+    //g_sigaction.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    g_sigaction.sa_flags = SA_SIGINFO;
     for (size_t i = 0; i < SIGNAL_COUNT; ++i) {
         sigaction(SIGNAL_DEFINITIONS[i].signum, &g_sigaction, NULL);
     }
@@ -107,10 +118,14 @@ startup_inproc_backend(
 static void
 shutdown_inproc_backend(sentry_backend_t *UNUSED(backend))
 {
-    g_signal_stack.ss_flags = SS_DISABLE;
-    sigaltstack(&g_signal_stack, 0);
-    sentry_free(g_signal_stack.ss_sp);
-    g_signal_stack.ss_sp = NULL;
+    // Mister Horse mod 
+    // we dont want to change signal stack to avoid confusing host app
+    // it also somehow causes stacktrace being empty
+
+    //g_signal_stack.ss_flags = SS_DISABLE;
+    //sigaltstack(&g_signal_stack, 0);
+    //sentry_free(g_signal_stack.ss_sp);
+    //g_signal_stack.ss_sp = NULL;
     reset_signal_handlers();
 }
 
